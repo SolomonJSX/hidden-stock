@@ -1,0 +1,12 @@
+# Build output
+bin/
+obj/
+publish/
+artifacts/
+*.user
+.vs/
+.idea/
+
+# OS
+Thumbs.db
+desktop.ini
