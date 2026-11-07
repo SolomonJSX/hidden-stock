@@ -10,3 +10,6 @@ artifacts/
 # OS
 Thumbs.db
 desktop.ini
+
+# Logs
+*.log
