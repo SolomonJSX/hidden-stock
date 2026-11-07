@@ -33,6 +33,22 @@ public static class AppPaths
         Hide(StateDir);
     }
 
+    public static bool CanWrite()
+    {
+        try
+        {
+            Ensure();
+            var probe = Path.Combine(StateDir, "probe.tmp");
+            File.WriteAllText(probe, "ok");
+            File.Delete(probe);
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
     public static IEnumerable<string> Replicas()
     {
         if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("HSX_ROOT")))

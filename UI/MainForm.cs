@@ -42,6 +42,7 @@ public sealed class MainForm : Form
 
     private VaultStatus _vault = new();
     private DateTimeOffset _now = DateTimeOffset.UtcNow;
+    private bool _storageOk = true;
     private bool _exiting;
     private bool _trayHintShown;
     private int _ticks;
@@ -122,6 +123,7 @@ public sealed class MainForm : Form
         _timer.Start();
 
         TimeGuard.Touch();
+        _storageOk = AppPaths.CanWrite();
         RefreshView();
     }
 
@@ -262,6 +264,14 @@ public sealed class MainForm : Form
         _restoreButton = null;
 
         var time = TimeGuard.Check();
+
+        if (!_storageOk)
+        {
+            _statusLabel.Text = "НЕТ ДОСТУПА К ПАПКЕ";
+            _statusLabel.ForeColor = Theme.Danger;
+            ShowNoStorage();
+            return;
+        }
 
         if (_vault.Corrupt)
         {
@@ -630,6 +640,15 @@ public sealed class MainForm : Form
             _files.Clear();
             RefreshView();
         }
+        catch (UnauthorizedAccessException ex)
+        {
+            _storageOk = AppPaths.CanWrite();
+            MessageBox.Show(this,
+                "Нет доступа к папке данных.\n\n" + AppPaths.Root +
+                "\n\nСкопируй HiddenStock.exe на рабочий стол и запусти из Проводника.\n\n" + ex.Message,
+                "Доступ запрещён", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            RefreshView();
+        }
         catch (Exception ex)
         {
             MessageBox.Show(this, "Не удалось запечатать: " + ex.Message, "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -638,6 +657,43 @@ public sealed class MainForm : Form
         {
             SetBusy(false);
         }
+    }
+
+    private void ShowNoStorage()
+    {
+        var layout = NewLayout(
+            (SizeType.Percent, 50),
+            (SizeType.Absolute, 56),
+            (SizeType.Absolute, 180),
+            (SizeType.Percent, 50),
+            (SizeType.Absolute, 60));
+
+        layout.Controls.Add(Caption("Нет доступа к папке данных",
+            Theme.Font(16f, FontStyle.Bold), Theme.Danger, ContentAlignment.MiddleCenter), 0, 1);
+
+        var text = "Windows не разрешает программе писать в\n" + AppPaths.Root + "\n\n" +
+                   "Обычно это значит, что exe запущен в ограниченной среде (песочнице) " +
+                   "или антивирус заблокировал папку.\n\n" +
+                   "Скопируй HiddenStock.exe на рабочий стол и запусти двойным кликом из Проводника.";
+
+        layout.Controls.Add(Caption(text, Theme.Font(9.5f), Theme.Muted, ContentAlignment.TopCenter), 0, 2);
+
+        var retry = new ModernButton
+        {
+            Text = "Повторить проверку",
+            Accent = true,
+            Width = 220,
+            Height = 44,
+            Anchor = AnchorStyles.Top | AnchorStyles.Right
+        };
+        retry.Click += (_, _) =>
+        {
+            _storageOk = AppPaths.CanWrite();
+            RefreshView();
+        };
+        layout.Controls.Add(retry, 0, 4);
+
+        _content.Controls.Add(layout);
     }
 
     private void ShowLocked()
@@ -936,6 +992,15 @@ public sealed class MainForm : Form
                 Vault.Erase();
             }
 
+            RefreshView();
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            _storageOk = AppPaths.CanWrite();
+            MessageBox.Show(this,
+                "Нет доступа к папке данных.\n\n" + AppPaths.Root +
+                "\n\nСкопируй HiddenStock.exe на рабочий стол и запусти из Проводника.\n\n" + ex.Message,
+                "Доступ запрещён", MessageBoxButtons.OK, MessageBoxIcon.Error);
             RefreshView();
         }
         catch (Exception ex)
