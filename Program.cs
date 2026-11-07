@@ -10,21 +10,52 @@ namespace HiddenStock;
 
 internal static class Program
 {
-    [STAThread]
-    private static int Main(string[] args)
+    internal static string LogPath
+    {
+        get
+        {
+            var custom = Environment.GetEnvironmentVariable("HSX_LOG");
+            if (!string.IsNullOrWhiteSpace(custom))
+                return custom;
+
+            return Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "HSX", "logs", "app.log");
+        }
+    }
+
+    internal static void Log(string message)
     {
         try
         {
-            return Run(args);
+            var path = LogPath;
+            var directory = Path.GetDirectoryName(path);
+            if (!string.IsNullOrEmpty(directory))
+                Directory.CreateDirectory(directory);
+            File.AppendAllText(path, $"{DateTime.Now:yyyy-MM-dd HH:mm:ss}  {message}{Environment.NewLine}");
+        }
+        catch { }
+    }
+
+    [STAThread]
+    private static int Main(string[] args)
+    {
+        Log("старт, аргументы: " + string.Join(" ", args));
+
+        try
+        {
+            var code = Run(args);
+            Log("выход " + code);
+            return code;
         }
         catch (Exception ex)
         {
+            Log("СБОЙ " + ex);
             try
             {
-                var target = Environment.GetEnvironmentVariable("HSX_LOG");
-                if (string.IsNullOrWhiteSpace(target))
-                    target = Path.Combine(Path.GetTempPath(), "hsx_crash.log");
-                File.WriteAllText(target, ex.ToString());
+                MessageBox.Show(
+                    "HiddenStock не смог запуститься.\n\n" + ex.Message + "\n\nПодробности: " + LogPath,
+                    "HiddenStock", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
             catch { }
             return 2;
@@ -39,9 +70,7 @@ internal static class Program
         if (args.Contains("--seed"))
             return Demo.Seed();
 
-        Application.SetHighDpiMode(HighDpiMode.PerMonitorV2);
-        Application.EnableVisualStyles();
-        Application.SetCompatibleTextRenderingDefault(false);
+        TryInit();
 
         if (args.Contains("--shot"))
         {
@@ -82,12 +111,47 @@ internal static class Program
         }
 
         Application.ThreadException += (_, e) =>
-            MessageBox.Show(e.Exception.ToString(), "Ошибка HiddenStock", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        {
+            Log("ThreadException " + e.Exception);
+            MessageBox.Show(e.Exception.Message, "Ошибка HiddenStock", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        };
 
         AppDomain.CurrentDomain.UnhandledException += (_, e) =>
-            MessageBox.Show(e.ExceptionObject?.ToString() ?? "Неизвестная ошибка", "Ошибка HiddenStock", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        {
+            Log("UnhandledException " + e.ExceptionObject);
+        };
 
         Application.Run(new MainForm());
         return 0;
+    }
+
+    private static void TryInit()
+    {
+        try
+        {
+            Application.SetHighDpiMode(HighDpiMode.PerMonitorV2);
+        }
+        catch (Exception ex)
+        {
+            Log("SetHighDpiMode не применён: " + ex.Message);
+        }
+
+        try
+        {
+            Application.EnableVisualStyles();
+        }
+        catch (Exception ex)
+        {
+            Log("EnableVisualStyles не применён: " + ex.Message);
+        }
+
+        try
+        {
+            Application.SetCompatibleTextRenderingDefault(false);
+        }
+        catch (Exception ex)
+        {
+            Log("CompatibleTextRendering не применён: " + ex.Message);
+        }
     }
 }

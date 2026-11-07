@@ -1,0 +1,10 @@
+System.UnauthorizedAccessException: Access to the path 'C:\Users\Janserik\AppData\Local\Temp\kcb2j0nf.bv5' is denied.
+   at Microsoft.Win32.SafeHandles.SafeFileHandle.CreateFile(String fullPath, FileMode mode, FileAccess access, FileShare share, FileOptions options)
+   at Microsoft.Win32.SafeHandles.SafeFileHandle.Open(String fullPath, FileMode mode, FileAccess access, FileShare share, FileOptions options, Int64 preallocationSize, Nullable`1 unixCreateMode)
+   at System.IO.Strategies.OSFileStreamStrategy..ctor(String path, FileMode mode, FileAccess access, FileShare share, FileOptions options, Int64 preallocationSize, Nullable`1 unixCreateMode)
+   at System.IO.Strategies.FileStreamHelpers.ChooseStrategyCore(String path, FileMode mode, FileAccess access, FileShare share, FileOptions options, Int64 preallocationSize, Nullable`1 unixCreateMode)
+   at System.IO.FileStream..ctor(String path, FileMode mode, FileAccess access, FileShare share)
+   at System.Windows.Forms.ThemingScope.CreateActivationContext(Stream manifest)
+   at System.Windows.Forms.Application.EnableVisualStyles()
+   at HiddenStock.Program.Run(String[] args)
+   at HiddenStock.Program.Main(String[] args)
